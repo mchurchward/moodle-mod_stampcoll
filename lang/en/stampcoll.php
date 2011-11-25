@@ -1,4 +1,4 @@
-<?PHP // $Id$ 
+<?PHP // $Id$
 
 $string['addstampbutton'] = 'Add';
 $string['confirmdel'] = 'Do you really want to delete this stamp?';
@@ -17,6 +17,8 @@ $string['numberofcollectedstamps'] = 'Number of collected stamps: $a';
 $string['numberofstamps'] = 'Stamps';
 $string['numberofyourstamps'] = 'Number of your stamps: $a';
 $string['ownstamps'] = 'Own stamps';
+$string['pluginadministration'] = 'Stamp collections administration';
+$string['pluginname'] = 'Stamp collections';
 $string['showupdateforms'] = 'Show forms to update stamps';
 $string['stampcoll:collectstamps'] = 'Collect stamps';
 $string['stampcoll:givestamps'] = 'Give stamps';

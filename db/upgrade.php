@@ -1,6 +1,6 @@
 <?php  //$Id$
 
-// This file keeps track of upgrades to 
+// This file keeps track of upgrades to
 // the stampcoll module
 //
 // Sometimes, changes between versions involve
@@ -19,11 +19,11 @@
 
 function xmldb_stampcoll_upgrade($oldversion=0) {
 
-    global $CFG, $THEME, $db;
+    global $CFG, $THEME, $DB;
 
-    $result = true;
+    $dbman = $DB->get_manager();
 
-    if ($result && $oldversion < 2008021900) { 
+    if ($oldversion < 2008021900) {
 
     /// CONTRIB-288 Drop field "publish" from the table "stampcoll" and controll the access by capabilities
         if ($collections = get_records('stampcoll', 'publish', '0')) {
@@ -34,7 +34,7 @@ function xmldb_stampcoll_upgrade($oldversion=0) {
                     // find all roles with legacy:student
                     if ($studentroles = get_roles_with_capability('moodle/legacy:student', CAP_ALLOW)) {
                         foreach ($studentroles as $studentrole) {
-                            // prevent students from viewing own stamps 
+                            // prevent students from viewing own stamps
                             assign_capability('mod/stampcoll:viewownstamps', CAP_PREVENT, $studentrole->id, $context->id);
                         }
                     }
@@ -49,16 +49,16 @@ function xmldb_stampcoll_upgrade($oldversion=0) {
                     // find all roles with legacy:student
                     if ($studentroles = get_roles_with_capability('moodle/legacy:student', CAP_ALLOW)) {
                         foreach ($studentroles as $studentrole) {
-                            // allow students to view others' stamps 
+                            // allow students to view others' stamps
                             assign_capability('mod/stampcoll:viewotherstamps', CAP_ALLOW, $studentrole->id, $context->id);
                         }
                     }
                 }
             }
         }
-        $table = new XMLDBTable('stampcoll');
-        $field = new XMLDBField('publish');
-        $result = $result && drop_field($table, $field);
+        $table = new xmldb_table('stampcoll');
+        $field = new xmldb_field('publish');
+        $dbman->drop_field($table, $field);
 
     /// CONTRIB-289 Drop field "teachercancollect" in the table "mdl_stampcoll"
         if ($collections = get_records('stampcoll', 'teachercancollect', '1')) {
@@ -67,7 +67,7 @@ function xmldb_stampcoll_upgrade($oldversion=0) {
                 if ($cm = get_coursemodule_from_instance('stampcoll', $collection->id)) {
                     $context = get_context_instance(CONTEXT_MODULE, $cm->id);
                     // find all roles with legacy:teacher and legacy:editingteacher
-                    // and allow them to collect stamps 
+                    // and allow them to collect stamps
                     if ($teacherroles = get_roles_with_capability('moodle/legacy:teacher', CAP_ALLOW)) {
                         foreach ($teacherroles as $teacherrole) {
                             assign_capability('mod/stampcoll:collectstamps', CAP_ALLOW, $teacherrole->id, $context->id);
@@ -81,98 +81,98 @@ function xmldb_stampcoll_upgrade($oldversion=0) {
                 }
             }
         }
-        $table = new XMLDBTable('stampcoll');
-        $field = new XMLDBField('teachercancollect');
-        $result = $result && drop_field($table, $field);
+        $table = new xmldb_table('stampcoll');
+        $field = new xmldb_field('teachercancollect');
+        $dbman->drop_field($table, $field);
+
+        upgrade_mod_savepoint(true, 2008021900, 'stampcoll');
     }
 
 
-    if ($result && $oldversion < 2008022002) {
+    if ($oldversion < 2008022002) {
 
     /// Define field anonymous to be added to stampcoll
-        $table = new XMLDBTable('stampcoll');
-        $field = new XMLDBField('anonymous');
-        $field->setAttributes(XMLDB_TYPE_INTEGER, '1', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, null, null, '0', 'displayzero');
-        $result = $result && add_field($table, $field);
+        $table = new xmldb_table('stampcoll');
+        $field = new xmldb_field('anonymous');
+        $field->set_attributes(XMLDB_TYPE_INTEGER, '1', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, '0', 'displayzero');
+        $dbman->add_field($table, $field);
 
     /// Rename field comment on table stampcoll_stamps to text
-        $table = new XMLDBTable('stampcoll_stamps');
-        $field = new XMLDBField('comment');
-        $field->setAttributes(XMLDB_TYPE_CHAR, '255', null, XMLDB_NOTNULL, null, null, null, null, 'userid');
-        $result = $result && rename_field($table, $field, 'text');
+        $table = new xmldb_table('stampcoll_stamps');
+        $field = new xmldb_field('comment');
+        $field->set_attributes(XMLDB_TYPE_CHAR, '255', null, XMLDB_NOTNULL, null, null, 'userid');
+        $dbman->rename_field($table, $field, 'text');
 
     /// Define field giver to be added to stampcoll_stamps
-        $table = new XMLDBTable('stampcoll_stamps');
-        $field = new XMLDBField('giver');
-        $field->setAttributes(XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, null, null, '0', 'userid');
-        $result = $result && add_field($table, $field);
+        $table = new xmldb_table('stampcoll_stamps');
+        $field = new xmldb_field('giver');
+        $field->set_attributes(XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, '0', 'userid');
+        $dbman->add_field($table, $field);
 
     /// Define key mdl_stampcoll_id_idx (unique) to be dropped form stampcoll
-        $table = new XMLDBTable('stampcoll');
-        $key = new XMLDBKey('mdl_stampcoll_id_idx');
-        $key->setAttributes(XMLDB_KEY_UNIQUE, array('id'));
-        $result = $result && drop_key($table, $key);
+        $table = new xmldb_table('stampcoll');
+        $key = new xmldb_key('mdl_stampcoll_id_idx');
+        $key->set_attributes(XMLDB_KEY_UNIQUE, array('id'));
+        $dbman->drop_key($table, $key);
 
     /// Define index mdl_stampcoll_course_idx (not unique) to be dropped form stampcoll
-        $table = new XMLDBTable('stampcoll');
-        $index = new XMLDBIndex('mdl_stampcoll_course_idx');
-        $index->setAttributes(XMLDB_INDEX_NOTUNIQUE, array('course'));
-        $result = $result && drop_index($table, $index);
+        $table = new xmldb_table('stampcoll');
+        $index = new xmldb_index('mdl_stampcoll_course_idx');
+        $index->set_attributes(XMLDB_INDEX_NOTUNIQUE, array('course'));
+        $dbman->drop_index($table, $index);
 
     /// Define index course (not unique) to be added to stampcoll
-        $table = new XMLDBTable('stampcoll');
-        $index = new XMLDBIndex('course');
-        $index->setAttributes(XMLDB_INDEX_NOTUNIQUE, array('course'));
-        $result = $result && add_index($table, $index);
+        $table = new xmldb_table('stampcoll');
+        $index = new xmldb_index('course');
+        $index->set_attributes(XMLDB_INDEX_NOTUNIQUE, array('course'));
+        $dbman->add_index($table, $index);
 
     /// Define index mdl_stampcoll_stamps_userid_idx (not unique) to be dropped form stampcoll_stamps
-        $table = new XMLDBTable('stampcoll_stamps');
-        $index = new XMLDBIndex('mdl_stampcoll_stamps_userid_idx');
-        $index->setAttributes(XMLDB_INDEX_NOTUNIQUE, array('userid'));
-        $result = $result && drop_index($table, $index);
+        $table = new xmldb_table('stampcoll_stamps');
+        $index = new xmldb_index('mdl_stampcoll_stamps_userid_idx');
+        $index->set_attributes(XMLDB_INDEX_NOTUNIQUE, array('userid'));
+        $dbman->drop_index($table, $index);
 
     /// Define index mdl_stampcoll_stamps_stampcollid_idx (not unique) to be dropped form stampcoll_stamps
-        $table = new XMLDBTable('stampcoll_stamps');
-        $index = new XMLDBIndex('mdl_stampcoll_stamps_stampcollid_idx');
-        $index->setAttributes(XMLDB_INDEX_NOTUNIQUE, array('stampcollid'));
-        $result = $result && drop_index($table, $index);
+        $table = new xmldb_table('stampcoll_stamps');
+        $index = new xmldb_index('mdl_stampcoll_stamps_stampcollid_idx');
+        $index->set_attributes(XMLDB_INDEX_NOTUNIQUE, array('stampcollid'));
+        $dbman->drop_index($table, $index);
 
     /// Define index userid (not unique) to be added to stampcoll_stamps
-        $table = new XMLDBTable('stampcoll_stamps');
-        $index = new XMLDBIndex('userid');
-        $index->setAttributes(XMLDB_INDEX_NOTUNIQUE, array('userid'));
+        $table = new xmldb_table('stampcoll_stamps');
+        $index = new xmldb_index('userid');
+        $index->set_attributes(XMLDB_INDEX_NOTUNIQUE, array('userid'));
 
     /// Launch add index userid
-        $result = $result && add_index($table, $index);
+        $dbman->add_index($table, $index);
 
     /// Define index giver (not unique) to be added to stampcoll_stamps
-        $table = new XMLDBTable('stampcoll_stamps');
-        $index = new XMLDBIndex('giver');
-        $index->setAttributes(XMLDB_INDEX_NOTUNIQUE, array('giver'));
+        $table = new xmldb_table('stampcoll_stamps');
+        $index = new xmldb_index('giver');
+        $index->set_attributes(XMLDB_INDEX_NOTUNIQUE, array('giver'));
 
     /// Launch add index giver
-        $result = $result && add_index($table, $index);    
+        $dbman->add_index($table, $index);
 
     /// Define key mdl_stampcoll_stamps_id_idx (unique) to be dropped form stampcoll_stamps
-        $table = new XMLDBTable('stampcoll_stamps');
-        $key = new XMLDBKey('mdl_stampcoll_stamps_id_idx');
-        $key->setAttributes(XMLDB_KEY_UNIQUE, array('id'));
+        $table = new xmldb_table('stampcoll_stamps');
+        $key = new xmldb_key('mdl_stampcoll_stamps_id_idx');
+        $key->set_attributes(XMLDB_KEY_UNIQUE, array('id'));
 
     /// Launch drop key mdl_stampcoll_stamps_id_idx
-        $result = $result && drop_key($table, $key);
+        $dbman->drop_key($table, $key);
 
     /// Define key stampcollid (foreign) to be added to stampcoll_stamps
-        $table = new XMLDBTable('stampcoll_stamps');
-        $key = new XMLDBKey('stampcollid');
-        $key->setAttributes(XMLDB_KEY_FOREIGN, array('stampcollid'), 'stampcoll', array('id'));
+        $table = new xmldb_table('stampcoll_stamps');
+        $key = new xmldb_key('stampcollid');
+        $key->set_attributes(XMLDB_KEY_FOREIGN, array('stampcollid'), 'stampcoll', array('id'));
 
     /// Launch add key stampcollid
-        $result = $result && add_key($table, $key);
+        $dbman->add_key($table, $key);
 
-
+        upgrade_mod_savepoint(true, 2008022002, 'stampcoll');
     }
 
-    return $result;
+    return true;
 }
-
-?>

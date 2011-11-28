@@ -30,8 +30,9 @@
 //
 // For the core capabilities, the variable is $moodle_capabilities.
 
+defined('MOODLE_INTERNAL') || die();
 
-$mod_stampcoll_capabilities = array(
+$capabilities = array(
 
     'mod/stampcoll:collectstamps' => array(
 
@@ -85,5 +86,3 @@ $mod_stampcoll_capabilities = array(
     ),
 
 );
-
-?>

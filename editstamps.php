@@ -10,7 +10,7 @@
         error("Course Module ID was incorrect");
     }
 
-    if (! $course = get_record("course", "id", $cm->course)) {
+    if (! $course = $DB->get_record("course", array("id" => $cm->course))) {
         error("Course is misconfigured");
     }
 
@@ -47,7 +47,7 @@
         redirect("editstamps.php?id=$cm->id");
         exit;
     }
-    
+
     $strstampcoll = get_string("modulename", "stampcoll");
     $strstampcolls = get_string("modulenameplural", "stampcoll");
 
@@ -77,8 +77,8 @@
             }
             $newstamp->text = $form->text;
             $newstamp->timemodified = time();
-            
-            if (! $newstamp->id = insert_record("stampcoll_stamps", $newstamp)) {
+
+            if (! $newstamp->id = $DB->insert_record("stampcoll_stamps", $newstamp)) {
                 error("Could not save new stamp");
             }
             add_to_log($course->id, "stampcoll", "add stamp", "view.php?id=$cm->id", $newstamp->userid, $cm->id);
@@ -98,8 +98,8 @@
             }
             $updatedstamp->text = $form->text;
             $updatedstamp->timemodified = time();
-            
-            if (! update_record("stampcoll_stamps", $updatedstamp)) {
+
+            if (! $DB->update_record("stampcoll_stamps", $updatedstamp)) {
                 error("Could not update stamp");
             }
             $updatedstamp = stampcoll_get_stamp($updatedstamp->id);
@@ -117,7 +117,7 @@
             if (! $stamp = stampcoll_get_stamp($form->deletestamp)) {
                 error("Could not find stamp");
             }
-            if (! delete_records("stampcoll_stamps", "id", $form->deletestamp)) {
+            if (! $DB->delete_records("stampcoll_stamps", array("id" => $form->deletestamp))) {
                 error("Could not delete stamp");
             }
             add_to_log($course->id, "stampcoll", "delete stamp", "view.php?id=$cm->id", $stamp->userid, $cm->id);
@@ -170,11 +170,11 @@
     /// Load all stamps into an array
     $userstamps = array();
     foreach ($allstamps as $s) {
-        $userstamps[$s->userid][] = $s; 
+        $userstamps[$s->userid][] = $s;
     }
     unset($allstamps);
     unset($s);
-    
+
 /// Groups and users
     groups_print_activity_menu($cm, $CFG->wwwroot.'/mod/stampcol/editstamps.php?page='.$page.'&amp;id='.$cm->id);
     $currentgroup = groups_get_activity_group($cm);
@@ -186,7 +186,7 @@
 /// Get perpage param from database
     $perpage = get_user_preferences('stampcoll_perpage', STAMPCOLL_USERS_PER_PAGE);
     $showupdateforms = get_user_preferences('stampcoll_showupdateforms', 1);
-    
+
     $tablecolumns = array('picture', 'fullname', 'count', 'comment');
     $tableheaders = array('', get_string('fullname'), get_string('numberofstamps', 'stampcoll'), '');
 
@@ -232,71 +232,73 @@
     if ($where = $table->get_sql_where()) {
         $where .= ' AND ';
     }
-    
+
     if ($sort = $table->get_sql_sort()) {
         $sort = ' ORDER BY '.$sort;
     }
 
-    $select = 'SELECT u.id, u.firstname, u.lastname, u.picture, COUNT(s.id) AS count ';
-    $sql = 'FROM '.$CFG->prefix.'user AS u '.
-           'LEFT JOIN '.$CFG->prefix.'stampcoll_stamps s ON u.id = s.userid AND s.stampcollid = '.$stampcoll->id.' '.
-           'WHERE '.$where.'u.id IN ('.implode(',', array_keys($users)).') GROUP BY u.id, u.firstname, u.lastname, u.picture ';
+    $select = "SELECT u.id, u.firstname, u.lastname, u.picture, COUNT(s.id) AS count ";
+    list($uids, $params) = $DB->get_in_or_equal(array_keys($users));
+    $params['stampcollid'] = $stampcoll->id;
+    $sql    = "FROM {user} AS u ".
+              "LEFT JOIN {stampcoll_stamps} s ON u.id = s.userid AND s.stampcollid = :stampcollid ".
+           	  "WHERE $where u.id $uids ".
+              "GROUP BY u.id, u.firstname, u.lastname, u.picture ";
 
     $table->pagesize($perpage, count($users));
-    
-    if (($ausers = get_records_sql($select.$sql.$sort, $table->get_page_start(), $table->get_page_size())) !== false) {
-        
-        foreach ($ausers as $auser) {
-            $picture = print_user_picture($auser->id, $course->id, $auser->picture, false, true);
-            $fullname = fullname($auser);
-            $count = '';
-            if ($auser->id == $USER->id && $cap_viewownstamps) {
-                $count = $auser->count;
-            }
-            if ($auser->id != $USER->id && $cap_viewotherstamps) {
-                $count = $auser->count;
-            }
-            $comment = '<form name="addform" action="editstamps.php?id='.$cm->id.'" method="post">';
-            $comment .= '<input name="text" type="text" size="35" maxlength="250" />';
-            $comment .= '<input type="hidden" name="sesskey" value="'.sesskey().'" />';
-            $comment .= '<input type="hidden" name="userid" value="'.$auser->id.'" />';
-            $comment .= '<input type="hidden" name="page" value="'.$page.'" />';
-            $comment .= '<input type="hidden" name="addstamp" value="1" />';
-            $comment .= '<input type="submit" value="'.get_string('addstampbutton', 'stampcoll').'" /></form>';
-            $row = array($picture, $fullname, $count, $comment);
-            $table->add_data($row);
 
-            if ($cap_viewotherstamps &&  $showupdateforms && isset($userstamps[$auser->id])) {
-                foreach ($userstamps[$auser->id] as $userstamp) {
-                    $count = stampcoll_stamp($userstamp, '', true, false, $CFG->pixpath.'/t/preview.gif');
-                    $count .= '&nbsp;';
-                    if ($cap_managestamps) {
-                        $count .= '<a href="editstamps.php?id='.$cm->id.'&amp;d='.$userstamp->id.'&amp;sesskey='.sesskey().'&amp;page='.$page.'" title="'.get_string('deletestamp', 'stampcoll').'">';
-                        $count .= '<img src="'.$CFG->pixpath.'/t/delete.gif" height="11" width="11" border="0" alt="'.get_string('deletestamp', 'stampcoll').'" />';
-                        $count .= '</a>&nbsp;&nbsp;';
-                    }
+    $ausers = $DB->get_records_sql($select.$sql.$sort, $params, $table->get_page_start(), $table->get_page_size());
 
-                    if ($cap_managestamps || ($userstamp->giver == $USER->id)) {
-                        $comment = '<form name="updateform" action="editstamps.php?id='.$cm->id.'" method="post">';
-                        $comment .= '<input name="text" type="text" size="35" maxlength="250" value="' . format_string($userstamp->text) . '" />';
-                        $comment .= '<input type="hidden" name="sesskey" value="'.sesskey().'" />';
-                        $comment .= '<input type="hidden" name="stampid" value="'.$userstamp->id.'" />';
-                        $comment .= '<input type="hidden" name="page" value="'.$page.'" />';
-                        $comment .= '<input type="hidden" name="updatestamp" value="1" />';
-                        $comment .= '<input type="submit" value="'.get_string('updatestampbutton', 'stampcoll').'" /></form>';
-                    } else {
-                        $comment = format_string($userstamp->text);
-                    }
-                    $row = array($picture, $fullname, $count, $comment);
-                    $table->add_data($row);
-                }
-            }
-                
+    foreach ($ausers as $auser) {
+        $picture = print_user_picture($auser->id, $course->id, $auser->picture, false, true);
+        $fullname = fullname($auser);
+        $count = '';
+        if ($auser->id == $USER->id && $cap_viewownstamps) {
+            $count = $auser->count;
         }
+        if ($auser->id != $USER->id && $cap_viewotherstamps) {
+            $count = $auser->count;
+        }
+        $comment = '<form name="addform" action="editstamps.php?id='.$cm->id.'" method="post">';
+        $comment .= '<input name="text" type="text" size="35" maxlength="250" />';
+        $comment .= '<input type="hidden" name="sesskey" value="'.sesskey().'" />';
+        $comment .= '<input type="hidden" name="userid" value="'.$auser->id.'" />';
+        $comment .= '<input type="hidden" name="page" value="'.$page.'" />';
+        $comment .= '<input type="hidden" name="addstamp" value="1" />';
+        $comment .= '<input type="submit" value="'.get_string('addstampbutton', 'stampcoll').'" /></form>';
+        $row = array($picture, $fullname, $count, $comment);
+        $table->add_data($row);
+
+        if ($cap_viewotherstamps &&  $showupdateforms && isset($userstamps[$auser->id])) {
+            foreach ($userstamps[$auser->id] as $userstamp) {
+                $count = stampcoll_stamp($userstamp, '', true, false, $CFG->pixpath.'/t/preview.gif');
+                $count .= '&nbsp;';
+                if ($cap_managestamps) {
+                    $count .= '<a href="editstamps.php?id='.$cm->id.'&amp;d='.$userstamp->id.'&amp;sesskey='.sesskey().'&amp;page='.$page.'" title="'.get_string('deletestamp', 'stampcoll').'">';
+                    $count .= '<img src="'.$CFG->pixpath.'/t/delete.gif" height="11" width="11" border="0" alt="'.get_string('deletestamp', 'stampcoll').'" />';
+                    $count .= '</a>&nbsp;&nbsp;';
+                }
+
+                if ($cap_managestamps || ($userstamp->giver == $USER->id)) {
+                    $comment = '<form name="updateform" action="editstamps.php?id='.$cm->id.'" method="post">';
+                    $comment .= '<input name="text" type="text" size="35" maxlength="250" value="' . format_string($userstamp->text) . '" />';
+                    $comment .= '<input type="hidden" name="sesskey" value="'.sesskey().'" />';
+                    $comment .= '<input type="hidden" name="stampid" value="'.$userstamp->id.'" />';
+                    $comment .= '<input type="hidden" name="page" value="'.$page.'" />';
+                    $comment .= '<input type="hidden" name="updatestamp" value="1" />';
+                    $comment .= '<input type="submit" value="'.get_string('updatestampbutton', 'stampcoll').'" /></form>';
+                } else {
+                    $comment = format_string($userstamp->text);
+                }
+                $row = array($picture, $fullname, $count, $comment);
+                $table->add_data($row);
+            }
+        }
+
     }
-    
+
     $table->print_html();  /// Print the whole table
-    
+
     /// Mini form for setting user preference
     echo '<br />';
     echo '<form name="options" action="editstamps.php?id='.$cm->id.'" method="post">';
@@ -326,6 +328,6 @@
     echo '</td></tr></table>';
     echo '</form>';
     ///End of mini form
-    
+
     print_footer($course);
 ?>

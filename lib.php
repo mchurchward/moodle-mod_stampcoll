@@ -19,7 +19,10 @@ define('STAMPCOLL_IMAGE_URL', $CFG->wwwroot.'/mod/stampcoll/defaultstamp.gif');
  * @todo Documenting this function. Capabilities checking
  */
 function stampcoll_user_outline($course, $user, $mod, $stampcoll) {
-    if ($stamps = get_records_select("stampcoll_stamps", "userid=$user->id AND stampcollid=$stampcoll->id")) {
+    global $DB;
+
+    $stamps = $DB->get_records_select("stampcoll_stamps", "userid=? AND stampcollid=?", array($user->id, $stampcoll->id));
+    if (!empty($stamps)) {
         $result = new stdClass();
         $result->info = get_string('numberofcollectedstamps', 'stampcoll', count($stamps));
         $result->time = 0;  // empty
@@ -32,10 +35,10 @@ function stampcoll_user_outline($course, $user, $mod, $stampcoll) {
  * @todo Documenting this function
  */
 function stampcoll_user_complete($course, $user, $mod, $stampcoll) {
-    
+
     global $USER;
 
-    $context = get_context_instance(CONTEXT_MODULE, $mod->id); 
+    $context = get_context_instance(CONTEXT_MODULE, $mod->id);
     if ($USER->id == $user->id) {
         if (!has_capability('mod/stampcoll:viewownstamps', $context)) {
             echo get_string('notallowedtoviewstamps', 'stampcoll');
@@ -77,15 +80,17 @@ function stampcoll_user_complete($course, $user, $mod, $stampcoll) {
 }
 
 /**
- * Create a new instance of stamp collection and return the id number. 
+ * Create a new instance of stamp collection and return the id number.
  *
  * @param object $stampcoll Object containing data defined by the form in mod.html
  * @return int ID number of the new instance
  */
 function stampcoll_add_instance($stampcoll) {
+    global $DB;
+
     $stampcoll->timemodified = time();
     $stampcoll->text = trim($stampcoll->text);
-    return insert_record("stampcoll", $stampcoll);
+    return $DB->insert_record("stampcoll", $stampcoll);
 }
 
 /**
@@ -95,10 +100,12 @@ function stampcoll_add_instance($stampcoll) {
  * @return boolean
  */
 function stampcoll_update_instance($stampcoll) {
+    global $DB;
+
     $stampcoll->id = $stampcoll->instance;
     $stampcoll->timemodified = time();
     $stampcoll->text = trim($stampcoll->text);
-    return update_record('stampcoll', $stampcoll);
+    return $DB->update_record('stampcoll', $stampcoll);
 }
 
 
@@ -109,17 +116,19 @@ function stampcoll_update_instance($stampcoll) {
  * @return bool
  */
 function stampcoll_delete_instance($id) {
-    if (! $stampcoll = get_record("stampcoll", "id", "$id")) {
+    global $DB;
+
+    if (! $stampcoll = $DB->get_record("stampcoll", array("id" => $id))) {
         return false;
     }
 
     $result = true;
 
-    if (! delete_records("stampcoll_stamps", "stampcollid", "$stampcoll->id")) {
+    if (! $DB->delete_records("stampcoll_stamps", array("stampcollid" => $stampcoll->id))) {
         $result = false;
     }
 
-    if (! delete_records("stampcoll", "id", "$stampcoll->id")) {
+    if (! $DB->delete_records("stampcoll", array("id" => $stampcoll->id))) {
         $result = false;
     }
 
@@ -136,12 +145,13 @@ function stampcoll_delete_instance($id) {
  * @return array Array of unique users
  */
 function stampcoll_get_participants($stampcollid) {
-    global $CFG;
-    $students = get_records_sql("SELECT DISTINCT u.id, u.id
-                                 FROM {$CFG->prefix}user u,
-                                      {$CFG->prefix}stampcoll_stamps s
-                                 WHERE s.stampcollid = '$stampcollid' AND
-                                       u.id = s.userid");
+    global $DB;
+    $students = $DB->get_records_sql("SELECT DISTINCT u.id, u.id
+                                      FROM {user} u,
+                                           {stampcoll_stamps} s
+                                      WHERE s.stampcollid = :stampcollid AND
+                                            u.id = s.userid",
+                                      array('stampcollid' => $stampcollid));
     return ($students);
 }
 
@@ -179,7 +189,9 @@ function stampcoll_get_users_can_collect($cm, $context, $currentgroup=false) {
  * @return object Object containing instance data
  */
 function stampcoll_get_stampcoll($stampcollid) {
-    return get_record("stampcoll", "id", $stampcollid);
+    global $DB;
+
+    return $DB->get_record("stampcoll", array("id" => $stampcollid));
 }
 
 /**
@@ -189,7 +201,9 @@ function stampcoll_get_stampcoll($stampcollid) {
  * @return array|false Array of found stamps (as objects) or false if no stamps or error occured
  */
 function stampcoll_get_stamps($stampcollid) {
-    return get_records("stampcoll_stamps", "stampcollid", $stampcollid, "id");
+    global $DB;
+
+    return $DB->get_records("stampcoll_stamps", array("stampcollid" => $stampcollid), "id");
 }
 
 /**
@@ -199,7 +213,9 @@ function stampcoll_get_stamps($stampcollid) {
  * @return object|false Found stamp (as object) or false if not such stamp or error occured
  */
 function stampcoll_get_stamp($stampid) {
-    return get_record("stampcoll_stamps", "id", $stampid);
+    global $DB;
+
+    return $DB->get_record("stampcoll_stamps", array("id" => $stampid));
 }
 
 

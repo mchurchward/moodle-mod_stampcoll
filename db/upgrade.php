@@ -26,7 +26,7 @@ function xmldb_stampcoll_upgrade($oldversion=0) {
     if ($oldversion < 2008021900) {
 
     /// CONTRIB-288 Drop field "publish" from the table "stampcoll" and controll the access by capabilities
-        if ($collections = get_records('stampcoll', 'publish', '0')) {
+        if ($collections = $DB->get_records('stampcoll', array('publish' => '0'))) {
             // collections with publish set to STAMPCOLL_PUBLISH_NONE - prevent displaying from legacy:students
             foreach ($collections as $collection) {
                 if ($cm = get_coursemodule_from_instance('stampcoll', $collection->id)) {
@@ -41,7 +41,7 @@ function xmldb_stampcoll_upgrade($oldversion=0) {
                 }
             }
         }
-        if ($collections = get_records('stampcoll', 'publish', '2')) {
+        if ($collections = $DB->get_records('stampcoll', array('publish' => '2'))) {
             // collections with publish set to STAMPCOLL_PUBLISH_ALL - allow legacy:students to view others' stamps
             foreach ($collections as $collection) {
                 if ($cm = get_coursemodule_from_instance('stampcoll', $collection->id)) {
@@ -61,7 +61,7 @@ function xmldb_stampcoll_upgrade($oldversion=0) {
         $dbman->drop_field($table, $field);
 
     /// CONTRIB-289 Drop field "teachercancollect" in the table "mdl_stampcoll"
-        if ($collections = get_records('stampcoll', 'teachercancollect', '1')) {
+        if ($collections = $DB->get_records('stampcoll', array('teachercancollect' => '1'))) {
             // collections which allow teachers to collect stamps
             foreach ($collections as $collection) {
                 if ($cm = get_coursemodule_from_instance('stampcoll', $collection->id)) {

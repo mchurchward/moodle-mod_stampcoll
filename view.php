@@ -11,7 +11,7 @@
         error("Course Module ID was incorrect");
     }
 
-    if (! $course = get_record("course", "id", $cm->course)) {
+    if (! $course = $DB->get_record("course", array("id" => $cm->course))) {
         error("Course is misconfigured");
     }
 
@@ -69,7 +69,7 @@
     if (empty($allstamps) && !$stampcoll->displayzero) {
         notice(get_string('nostampsincollection', 'stampcoll'), $CFG->wwwroot."/course/view.php?id=$course->id");
     }
-    
+
 /// Re-sort all stamps into "by-user-array"
     $userstamps = array();
     foreach ($allstamps as $s) {
@@ -79,11 +79,11 @@
         if (($s->userid != $USER->id) && (!$cap_viewotherstamps)) {
             continue;
         }
-        $userstamps[$s->userid][] = $s; 
+        $userstamps[$s->userid][] = $s;
     }
     unset($allstamps);
     unset($s);
-    
+
     if (($cap_viewonlyownstamps) || (($cap_viewsomestamps) && ($view == 'own')))  {
         /// Display a page with own stamps only
         if (isset($userstamps[$USER->id])) {
@@ -102,7 +102,7 @@
         print_heading(get_string('numberofyourstamps', 'stampcoll', count($mystamps)));
         echo '<div class="stamppictures">'.$stampimages.'</div>';
         print_box_end();
-        
+
     } elseif ($cap_viewotherstamps) {
         /// Display a table of users and their stamps
         groups_print_activity_menu($cm, $CFG->wwwroot.'/mod/stampcol/view.php?page='.$page.'&amp;id='.$cm->id);
@@ -162,44 +162,44 @@
         if ($where = $table->get_sql_where()) {
             $where .= ' AND ';
         }
-        
+
         if ($sort = $table->get_sql_sort()) {
             $sort = ' ORDER BY '.$sort;
         }
 
         $select = 'SELECT u.id, u.firstname, u.lastname, u.picture, COUNT(s.id) AS count ';
-        $sql = 'FROM '.$CFG->prefix.'user AS u '.
-               'LEFT JOIN '.$CFG->prefix.'stampcoll_stamps s ON u.id = s.userid AND s.stampcollid = '.$stampcoll->id.' '.
-               'WHERE '.$where.'u.id IN ('.implode(',', array_keys($users)).') '.
-               'GROUP BY u.id, u.firstname, u.lastname, u.picture ';
+        $params['stampcollid'] = $stampcoll->id;
+        list($uids, $params) = $DB->get_in_or_equal(array_keys($users));
+        $sql = "FROM {user} AS u ".
+               "LEFT JOIN {stampcoll_stamps} s ON u.id = s.userid AND s.stampcollid = :stampcollid ".
+               "WHERE $where u.id $uids ".
+               "GROUP BY u.id, u.firstname, u.lastname, u.picture ";
 
         if (!$stampcoll->displayzero) {
             $sql .= 'HAVING COUNT(s.id) > 0 ';
         }
 
         // First query with not limits to get the number of returned rows
-        if (($ausers = get_records_sql($select.$sql.$sort)) !== false) {
-            $table->pagesize($perpage, count($ausers));
-            // Second query with pagination limits
-            if (($ausers = get_records_sql($select.$sql.$sort, $table->get_page_start(), $table->get_page_size())) !== false) {
-                foreach ($ausers as $auser) {
-                    $picture = print_user_picture($auser->id, $course->id, $auser->picture, false, true);
-                    $fullname = fullname($auser);
-                    $count = $auser->count;
-                    $stamps = '';
-                    if (isset($userstamps[$auser->id])) {
-                        foreach ($userstamps[$auser->id] as $s) {
-                            $stamps .= stampcoll_stamp($s, $stampcoll->image);
-                        }
-                        unset($s);
-                    }
-                    $row = array($picture, $fullname, $count, $stamps);
-                    $table->add_data($row);
+        $ausers = $DB->get_records_sql($select.$sql.$sort, $params);
+        $table->pagesize($perpage, count($ausers));
+        // Second query with pagination limits
+        $ausers = $DB->get_records_sql($select.$sql.$sort, $params, $table->get_page_start(), $table->get_page_size());
+        foreach ($ausers as $auser) {
+            $picture = print_user_picture($auser->id, $course->id, $auser->picture, false, true);
+            $fullname = fullname($auser);
+            $count = $auser->count;
+            $stamps = '';
+            if (isset($userstamps[$auser->id])) {
+                foreach ($userstamps[$auser->id] as $s) {
+                    $stamps .= stampcoll_stamp($s, $stampcoll->image);
                 }
+                unset($s);
             }
-        } 
+            $row = array($picture, $fullname, $count, $stamps);
+            $table->add_data($row);
+        }
         $table->print_html();  /// Print the whole table
-        
+
         /// Mini form for setting user preference
         echo '<br />';
         echo '<form name="options" action="view.php?id='.$cm->id.'" method="post">';
@@ -219,6 +219,6 @@
         echo '</form>';
         ///End of mini form
     }
-        
+
     print_footer($course);
 ?>

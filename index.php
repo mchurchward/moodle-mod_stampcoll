@@ -5,7 +5,7 @@
 
     $id = required_param('id', PARAM_INT);   // course
 
-    if (! $course = get_record('course', 'id', $id)) {
+    if (! $course = $DB->get_record('course', array('id' => $id))) {
         error('Course ID is incorrect');
     }
 
@@ -71,7 +71,7 @@
             }
             $currentsection = $stampcoll->section;
         }
-        
+
         //Calculate the href
         if (!$stampcoll->visible) {
             //Show dimmed if the mod is hidden
@@ -96,7 +96,7 @@
                 $aa .= ' ('. ($count_totalstamps - $count_mystamps) .')';
             }
         }
-            
+
         if ($course->format == 'weeks' || $course->format == 'topics') {
             $table->data[] = array ($printsection, $tt_href, $aa);
         } else {
@@ -106,5 +106,5 @@
     print_table($table);
 
     print_footer($course);
- 
+
 ?>

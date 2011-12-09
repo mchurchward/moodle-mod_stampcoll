@@ -330,4 +330,3 @@
     ///End of mini form
 
     print_footer($course);
-?>

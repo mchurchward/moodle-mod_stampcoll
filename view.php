@@ -55,8 +55,8 @@
     include(dirname(__FILE__).'/tabs.php');
 
 /// Print activity introduction (description)
-    if (in_array($currenttab, array('view', 'viewown')) and (!empty($stampcoll->text))) {
-        print_box(format_text($stampcoll->text), 'generalbox', 'intro');
+    if (in_array($currenttab, array('view', 'viewown')) and (!empty($stampcoll->intro))) {
+        print_box(format_text($stampcoll->intro), 'generalbox', 'intro');
     }
 
     if (!$cap_viewsomestamps) {
@@ -221,4 +221,3 @@
     }
 
     print_footer($course);
-?>

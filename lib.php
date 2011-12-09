@@ -89,7 +89,7 @@ function stampcoll_add_instance($stampcoll) {
     global $DB;
 
     $stampcoll->timemodified = time();
-    $stampcoll->text = trim($stampcoll->text);
+    $stampcoll->intro = trim($stampcoll->intro);
     return $DB->insert_record("stampcoll", $stampcoll);
 }
 
@@ -104,7 +104,7 @@ function stampcoll_update_instance($stampcoll) {
 
     $stampcoll->id = $stampcoll->instance;
     $stampcoll->timemodified = time();
-    $stampcoll->text = trim($stampcoll->text);
+    $stampcoll->Intro = trim($stampcoll->intro);
     return $DB->update_record('stampcoll', $stampcoll);
 }
 
@@ -285,6 +285,3 @@ function stampcoll_modversion() {
     require(dirname(__FILE__).'/version.php');
     return $module->version;
 }
-
-
-?>

@@ -6,6 +6,11 @@
  * See http://docs.moodle.org/en/Development:lib/formslib.php
  */
 
+
+if (!defined('MOODLE_INTERNAL')) {
+    die('Direct access to this script is forbidden.');    ///  It must be included from a Moodle page
+}
+
 require_once ($CFG->dirroot.'/course/moodleform_mod.php');
 require_once ($CFG->dirroot.'/lib/filelib.php');
 
@@ -19,17 +24,21 @@ class mod_stampcoll_mod_form extends moodleform_mod {
 
 //-- General --------------------------------------------------------------------
         $mform->addElement('header', 'general', get_string('general', 'form'));
-    /// name 
+    /// name
         $mform->addElement('text', 'name', get_string('name'), array('size'=>'60'));
         $mform->setType('name', PARAM_TEXT);
         $mform->addRule('name', null, 'required', null, 'client');
+
     /// text (description)
-        $mform->addElement('htmleditor', 'text', get_string('description'));
-        $mform->setType('text', PARAM_RAW);
-        //$mform->addRule('text', get_string('required'), 'required', null, 'client');
-        $mform->setHelpButton('text', array('writing', 'richtext'), false, 'editorhelpbutton');
-    /// introformat
-        $mform->addElement('format', 'introformat', get_string('format'));
+//        $mform->addElement('htmleditor', 'text', get_string('description'));
+//        $mform->setType('text', PARAM_RAW);
+//        //$mform->addRule('text', get_string('required'), 'required', null, 'client');
+//        $mform->setHelpButton('text', array('writing', 'richtext'), false, 'editorhelpbutton');
+//    /// introformat
+//        $mform->addElement('format', 'introformat', get_string('format'));
+
+        $this->add_intro_editor(true, get_string('description'));
+
 //-- Stamp Collection------------------------------------------------------------
         $mform->addElement('header', 'stampcollection', get_string('modulename', 'stampcoll'));
     /// stampimage
@@ -41,13 +50,13 @@ class mod_stampcoll_mod_form extends moodleform_mod {
                 $images["$filename"] = $filename;
             }
         }
-        $mform->addElement('select', 'image', get_string('stampimage', 'stampcoll'), 
+        $mform->addElement('select', 'image', get_string('stampimage', 'stampcoll'),
                                     array_merge(array(''=>get_string('default')), $images),'a','b','c','d');
         $mform->addElement('static', 'stampimageinfo', '', get_string('stampimageinfo', 'stampcoll') );
     /// displayzero
         $mform->addElement('selectyesno', 'displayzero', get_string('displayzero', 'stampcoll'));
         $mform->setDefault('displayzero', 0);
- 
+
 //-------------------------------------------------------------------------------
         // add standard elements, common to all modules
         $this->standard_coursemodule_elements();
@@ -58,4 +67,3 @@ class mod_stampcoll_mod_form extends moodleform_mod {
     }
 }
 
-?>

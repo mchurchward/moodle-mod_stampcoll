@@ -174,5 +174,18 @@ function xmldb_stampcoll_upgrade($oldversion=0) {
         upgrade_mod_savepoint(true, 2008022002, 'stampcoll');
     }
 
+    if ($oldversion < 2010080300) {
+
+    /// Rename field text on table stampcoll to intro
+        $table = new xmldb_table('stampcoll');
+        $field = new xmldb_field('text', XMLDB_TYPE_TEXT, 'small', null, XMLDB_NOTNULL, null, null, 'name');
+
+    /// Launch rename field description
+        $dbman->rename_field($table, $field, 'intro');
+
+    /// assignment savepoint reached
+        upgrade_mod_savepoint(true, 2010080300, 'stampcoll');
+    }
+
     return true;
 }

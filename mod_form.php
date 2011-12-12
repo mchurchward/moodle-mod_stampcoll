@@ -29,14 +29,7 @@ class mod_stampcoll_mod_form extends moodleform_mod {
         $mform->setType('name', PARAM_TEXT);
         $mform->addRule('name', null, 'required', null, 'client');
 
-    /// text (description)
-//        $mform->addElement('htmleditor', 'text', get_string('description'));
-//        $mform->setType('text', PARAM_RAW);
-//        //$mform->addRule('text', get_string('required'), 'required', null, 'client');
-//        $mform->setHelpButton('text', array('writing', 'richtext'), false, 'editorhelpbutton');
-//    /// introformat
-//        $mform->addElement('format', 'introformat', get_string('format'));
-
+    /// intro
         $this->add_intro_editor(true, get_string('description'));
 
 //-- Stamp Collection------------------------------------------------------------

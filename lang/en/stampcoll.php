@@ -1,4 +1,4 @@
-<?PHP // $Id$
+<?php
 
 $string['addstampbutton'] = 'Add';
 $string['confirmdel'] = 'Do you really want to delete this stamp?';
@@ -7,8 +7,9 @@ $string['displayzero'] = 'Display users with no stamps';
 $string['editstamps'] = 'Edit stamps';
 $string['givenby'] = 'From: $a';
 $string['givento'] = 'To: $a';
-$string['modulenameplural'] = 'Stamp collections';
 $string['modulename'] = 'Stamp collection';
+$string['modulename_help'] = 'This module allows a teacher to give "stamps" (i.e. picture with a comment) to students so they can collect stamps.';
+$string['modulenameplural'] = 'Stamp collections';
 $string['nostampscollected'] = 'No stamps collected';
 $string['nostampsincollection'] = 'No stamps in this collection';
 $string['notallowedtoviewstamps'] = 'You are not allowed to view stamps in this collection';
@@ -31,4 +32,3 @@ $string['studentsperpage'] = 'Students per page';
 $string['timemodified'] = 'Last change';
 $string['updatestampbutton'] = 'Update';
 $string['viewstamps'] = 'View stamps';
-?>

@@ -183,7 +183,25 @@ function xmldb_stampcoll_upgrade($oldversion=0) {
     /// Launch rename field description
         $dbman->rename_field($table, $field, 'intro');
 
-    /// assignment savepoint reached
+    /// Define field introformat to be added to data
+        $field = new xmldb_field('format', XMLDB_TYPE_INTEGER, '4', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, '0', 'intro');
+
+    /// Launch rename field introformat
+        $dbman->rename_field($table, $field, 'introformat');
+
+        // conditionally migrate to html format in intro
+        if ($CFG->texteditors !== 'textarea') {
+            $rs = $DB->get_recordset('stampcoll', array('introformat'=>FORMAT_MOODLE), '', 'id,intro,introformat');
+            foreach ($rs as $d) {
+                $d->intro       = text_to_html($d->intro, false, false, true);
+                $d->introformat = FORMAT_HTML;
+                $DB->update_record('stampcoll', $d);
+                upgrade_set_timeout();
+            }
+            $rs->close();
+        }
+
+    /// stampcoll savepoint reached
         upgrade_mod_savepoint(true, 2010080300, 'stampcoll');
     }
 

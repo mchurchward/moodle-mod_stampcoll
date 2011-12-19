@@ -15,6 +15,16 @@
         error("Course is misconfigured");
     }
 
+    $params = array();
+    $params['id'] = $id;
+    if ($view) {
+        $params['view'] = $view;
+    }
+    if ($page) {
+        $params['page'] = $page;
+    }
+    $PAGE->set_url('/mod/stampcoll/view.php', $params);
+
     require_course_login($course, true, $cm);
 
     if (!$stampcoll = stampcoll_get_stampcoll($cm->instance)) {
@@ -25,11 +35,12 @@
     $context = get_context_instance(CONTEXT_MODULE, $cm->id);
     include(dirname(__FILE__).'/caps.php');
 
-/// If it's hidden then don't show anything
+    $PAGE->set_title(format_string($stampcoll->name));
+    $PAGE->set_heading(format_string($course->fullname));
+    echo $OUTPUT->header();
+
+    /// If it's hidden then don't show anything
     if (empty($cm->visible) && !has_capability('moodle/course:viewhiddenactivities', $context)) {
-        $navigation = build_navigation('', $cm);
-        print_header_simple(format_string($stampcoll->name), "",
-                 $navigation, "", "", true, '', navmenu($course, $cm));
         notice(get_string("activityiscurrentlyhidden"));
     }
 
@@ -37,11 +48,6 @@
     $strstampcolls = get_string("modulenameplural", "stampcoll");
 
     add_to_log($course->id, "stampcoll", "view", "view.php?id=$cm->id", $stampcoll->id, $cm->id);
-
-    $navigation = build_navigation('', $cm);
-    print_header_simple(format_string($stampcoll->name), "",
-                  $navigation, "", "", true,
-                  update_module_button($cm->id, $course->id, $strstampcoll), navmenu($course, $cm));
 
     if ($cap_viewonlyownstamps && $view == 'all') {
         $view = 'own';
@@ -56,7 +62,7 @@
 
 /// Print activity introduction (description)
     if (in_array($currenttab, array('view', 'viewown')) and (!empty($stampcoll->intro))) {
-        print_box(format_text($stampcoll->intro), 'generalbox', 'intro');
+        echo $OUTPUT->box(format_text($stampcoll->intro), 'generalbox', 'intro');
     }
 
     if (!$cap_viewsomestamps) {
@@ -98,10 +104,10 @@
         }
         unset($s);
 
-        print_box_start();
-        print_heading(get_string('numberofyourstamps', 'stampcoll', count($mystamps)));
+        echo $OUTPUT->box_start();
+        echo $OUTPUT->heading(get_string('numberofyourstamps', 'stampcoll', count($mystamps)));
         echo '<div class="stamppictures">'.$stampimages.'</div>';
-        print_box_end();
+        echo $OUTPUT->box_end();
 
     } elseif ($cap_viewotherstamps) {
         /// Display a table of users and their stamps
@@ -109,7 +115,7 @@
         $currentgroup = groups_get_activity_group($cm);
         $users = stampcoll_get_users_can_collect($cm, $context, $currentgroup);
         if (!$users) {
-            print_heading(get_string("nousersyet"));
+            echo $OUTPUT->heading(get_string("nousersyet"));
         }
 
         /// First we check to see if the form has just been submitted
@@ -153,7 +159,7 @@
         $table->setup();
 
         if (empty($users)) {
-            print_heading(get_string('nousers','stampcoll'));
+            echo $OUTPUT->heading(get_string('nousers','stampcoll'));
             return true;
         }
 
@@ -185,7 +191,7 @@
         // Second query with pagination limits
         $ausers = $DB->get_records_sql($select.$sql.$sort, $params, $table->get_page_start(), $table->get_page_size());
         foreach ($ausers as $auser) {
-            $picture = print_user_picture($auser->id, $course->id, $auser->picture, false, true);
+            $picture = $OUTPUT->user_picture($auser->id, $course->id, $auser->picture, false, true);
             $fullname = fullname($auser);
             $count = $auser->count;
             $stamps = '';
@@ -220,4 +226,4 @@
         ///End of mini form
     }
 
-    print_footer($course);
+    echo $OUTPUT->footer($course);

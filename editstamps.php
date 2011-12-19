@@ -240,7 +240,7 @@
     $select = "SELECT u.id, u.firstname, u.lastname, u.picture, COUNT(s.id) AS count ";
     list($uids, $params) = $DB->get_in_or_equal(array_keys($users));
     $params['stampcollid'] = $stampcoll->id;
-    $sql    = "FROM {user} AS u ".
+    $sql    = "FROM {user} u ".
               "LEFT JOIN {stampcoll_stamps} s ON u.id = s.userid AND s.stampcollid = :stampcollid ".
            	  "WHERE $where u.id $uids ".
               "GROUP BY u.id, u.firstname, u.lastname, u.picture ";

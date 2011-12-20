@@ -14,6 +14,13 @@
         error("Course is misconfigured");
     }
 
+    $params = array();
+    $params['id'] = $id;
+    if ($page) {
+        $params['page'] = $page;
+    }
+    $PAGE->set_url('/mod/stampcoll/editstamps.php', $params);
+
     require_login($course->id, false, $cm);
 
 /// Get capabilities
@@ -48,13 +55,9 @@
         exit;
     }
 
-    $strstampcoll = get_string("modulename", "stampcoll");
-    $strstampcolls = get_string("modulenameplural", "stampcoll");
-
-    $navigation = build_navigation(get_string('editstamps', 'stampcoll') , $cm);
-    print_header_simple(format_string($stampcoll->name), '',
-                  $navigation, '', '', true,
-                  update_module_button($cm->id, $course->id, $strstampcoll), navmenu($course, $cm));
+    $PAGE->set_title(format_string($stampcoll->name));
+    $PAGE->set_heading(format_string($course->fullname));
+    echo $OUTPUT->header();
 
 /// Print the tabs
     $currenttab = 'edit';
@@ -141,9 +144,9 @@
             error("Invalid stamp ID");
         }
 
-        print_box_start();
+        echo $OUTPUT->box_start();
 
-        print_heading(get_string("confirmdel", "stampcoll"));
+        echo $OUTPUT->heading(get_string("confirmdel", "stampcoll"));
 
         $form = '<div align="center"><form name="delform" action="editstamps.php?id='.$cm->id.'" method="post">';
         $form .= '<input type="hidden" name="sesskey" value="'.sesskey().'" />';
@@ -155,15 +158,15 @@
         $form .= '<input type="button" value="'.get_string('no').'" onclick="javascript:history.go(-1);" />';
         $form .= '</form></div>';
         echo $form;
-        print_box_end();
+        echo $OUTPUT->box_end();
 
-        print_box_start('delstampbox');
+        echo $OUTPUT->box_start('delstampbox');
         echo '<div class="picture">'.stampcoll_stamp($stamp, $stampcoll->image).'</div>';
         echo '<div class="comment">'.format_text($stamp->text).'</div>';
         echo '<div class="timemodified">'.get_string('timemodified', 'stampcoll').': '.
                                                 userdate($stamp->timemodified).'</div>';
-        print_box_end();
-        print_footer($course);
+        echo $OUTPUT->box_end();
+        echo $OUTPUT->footer($course);
         exit;
     }
 
@@ -180,7 +183,7 @@
     $currentgroup = groups_get_activity_group($cm);
     $users = stampcoll_get_users_can_collect($cm, $context, $currentgroup);
     if (!$users) {
-        print_heading(get_string("nousersyet"));
+        echo $OUTPUT->heading(get_string("nousersyet"));
     }
 
 /// Get perpage param from database
@@ -223,7 +226,7 @@
     $table->setup();
 
     if (empty($users)) {
-        print_heading(get_string('nousers','stampcoll'));
+        echo $OUTPUT->heading(get_string('nousers','stampcoll'));
         return true;
     }
 
@@ -250,7 +253,7 @@
     $ausers = $DB->get_records_sql($select.$sql.$sort, $params, $table->get_page_start(), $table->get_page_size());
 
     foreach ($ausers as $auser) {
-        $picture = print_user_picture($auser->id, $course->id, $auser->picture, false, true);
+        $picture = $OUTPUT->user_picture($auser->id, $course->id, $auser->picture, false, true);
         $fullname = fullname($auser);
         $count = '';
         if ($auser->id == $USER->id && $cap_viewownstamps) {
@@ -329,4 +332,4 @@
     echo '</form>';
     ///End of mini form
 
-    print_footer($course);
+    echo $OUTPUT->footer($course);

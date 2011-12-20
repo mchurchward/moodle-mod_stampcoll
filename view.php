@@ -227,3 +227,4 @@
     }
 
     echo $OUTPUT->footer($course);
+

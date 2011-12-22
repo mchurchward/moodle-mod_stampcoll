@@ -35,6 +35,7 @@
     $context = get_context_instance(CONTEXT_MODULE, $cm->id);
     include(dirname(__FILE__).'/caps.php');
 
+    $PAGE->set_context($context);
     $PAGE->set_title(format_string($stampcoll->name));
     $PAGE->set_heading(format_string($course->fullname));
     echo $OUTPUT->header();
@@ -160,12 +161,14 @@
 
         if (empty($users)) {
             echo $OUTPUT->heading(get_string('nousers','stampcoll'));
+            echo $OUTPUT->footer($course);
             return true;
         }
 
     /// Construct the SQL
 
-        if ($where = $table->get_sql_where()) {
+        list($where, $w_params) = $table->get_sql_where();
+        if ($where) {
             $where .= ' AND ';
         }
 
@@ -174,11 +177,16 @@
         }
 
         $select = 'SELECT u.id, u.firstname, u.lastname, u.picture, COUNT(s.id) AS count ';
-        $params['stampcollid'] = $stampcoll->id;
-        list($uids, $params) = $DB->get_in_or_equal(array_keys($users));
-        $sql = "FROM {user} AS u ".
-               "LEFT JOIN {stampcoll_stamps} s ON u.id = s.userid AND s.stampcollid = :stampcollid ".
-               "WHERE $where u.id $uids ".
+        list($uids, $u_params) = $DB->get_in_or_equal(array_keys($users));
+
+        $params = array();
+        $params[] = $stampcoll->id;
+        $params = array_merge($params, $w_params);
+        $params = array_merge($params, $u_params);
+
+        $sql = "FROM {user} u ".
+               "LEFT JOIN {stampcoll_stamps} s ON u.id = s.userid AND s.stampcollid = ? ".
+               "WHERE $where (u.id $uids) ".
                "GROUP BY u.id, u.firstname, u.lastname, u.picture ";
 
         if (!$stampcoll->displayzero) {
@@ -191,7 +199,7 @@
         // Second query with pagination limits
         $ausers = $DB->get_records_sql($select.$sql.$sort, $params, $table->get_page_start(), $table->get_page_size());
         foreach ($ausers as $auser) {
-            $picture = $OUTPUT->user_picture($auser->id, $course->id, $auser->picture, false, true);
+            $picture = $OUTPUT->user_picture($auser, array('courseid' => $course->id));
             $fullname = fullname($auser);
             $count = $auser->count;
             $stamps = '';

@@ -227,6 +227,7 @@
 
     if (empty($users)) {
         echo $OUTPUT->heading(get_string('nousers','stampcoll'));
+        echo $OUTPUT->footer($course);
         return true;
     }
 

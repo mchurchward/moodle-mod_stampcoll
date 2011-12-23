@@ -176,7 +176,8 @@
             $sort = ' ORDER BY '.$sort;
         }
 
-        $select = 'SELECT u.id, u.firstname, u.lastname, u.picture, COUNT(s.id) AS count ';
+        $userfields = user_picture::fields('u');
+        $select = "SELECT {$userfields}, COUNT(s.id) AS count ";
         list($uids, $u_params) = $DB->get_in_or_equal(array_keys($users));
 
         $params = array();
@@ -224,7 +225,7 @@
         echo ':</td>';
         echo '<td align="left">';
         echo '<input type="text" id="perpage" name="perpage" size="1" value="'.$perpage.'" />';
-        helpbutton('pagesize', get_string('studentsperpage','stampcoll'), 'stampcoll');
+        echo $OUTPUT->help_icon('studentsperpage', 'stampcoll');
         echo '</td></tr>';
         echo '<tr>';
         echo '<td colspan="2" align="right">';

@@ -233,7 +233,8 @@
 
 /// Construct the SQL
 
-    if ($where = $table->get_sql_where()) {
+    list($where, $w_params) = $table->get_sql_where();
+    if ($where) {
         $where .= ' AND ';
     }
 
@@ -241,11 +242,17 @@
         $sort = ' ORDER BY '.$sort;
     }
 
-    $select = "SELECT u.id, u.firstname, u.lastname, u.picture, COUNT(s.id) AS count ";
-    list($uids, $params) = $DB->get_in_or_equal(array_keys($users));
-    $params['stampcollid'] = $stampcoll->id;
+    $userfields = user_picture::fields('u');
+    $select = "SELECT {$userfields}, COUNT(s.id) AS count ";
+    list($uids, $u_params) = $DB->get_in_or_equal(array_keys($users));
+
+    $params = array();
+    $params[] = $stampcoll->id;
+    $params = array_merge($params, $w_params);
+    $params = array_merge($params, $u_params);
+
     $sql    = "FROM {user} u ".
-              "LEFT JOIN {stampcoll_stamps} s ON u.id = s.userid AND s.stampcollid = :stampcollid ".
+              "LEFT JOIN {stampcoll_stamps} s ON u.id = s.userid AND s.stampcollid = ? ".
            	  "WHERE $where u.id $uids ".
               "GROUP BY u.id, u.firstname, u.lastname, u.picture ";
 
@@ -254,7 +261,7 @@
     $ausers = $DB->get_records_sql($select.$sql.$sort, $params, $table->get_page_start(), $table->get_page_size());
 
     foreach ($ausers as $auser) {
-        $picture = $OUTPUT->user_picture($auser->id, $course->id, $auser->picture, false, true);
+        $picture = $OUTPUT->user_picture($auser, array('courseid' => $course->id));
         $fullname = fullname($auser);
         $count = '';
         if ($auser->id == $USER->id && $cap_viewownstamps) {
@@ -313,7 +320,7 @@
     echo ':</td>';
     echo '<td align="left">';
     echo '<input type="text" id="perpage" name="perpage" size="1" value="'.$perpage.'" />';
-    helpbutton('studentperpage', get_string('studentsperpage','stampcoll'), 'stampcoll');
+    echo $OUTPUT->help_icon('studentsperpage', 'stampcoll');
     echo '</td></tr>';
     echo '<tr align="right"><td>';
     echo '<label for="showupdateforms">'.get_string('showupdateforms','stampcoll').'</label>';
@@ -324,7 +331,7 @@
         echo 'checked="checked" ';
     }
     echo '/>';
-    helpbutton('showupdateforms', get_string('showupdateforms','stampcoll'), 'stampcoll');
+    echo $OUTPUT->help_icon('showupdateforms', 'stampcoll');
     echo '</td></tr>';
     echo '<tr>';
     echo '<td colspan="2" align="right">';

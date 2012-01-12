@@ -8,11 +8,11 @@
     $page = optional_param('page', 0, PARAM_INT);       // Page of the batch view
 
     if (! $cm = get_coursemodule_from_id('stampcoll', $id)) {
-        error("Course Module ID was incorrect");
+        print_error("Course Module ID was incorrect");
     }
 
     if (! $course = $DB->get_record("course", array("id" => $cm->course))) {
-        error("Course is misconfigured");
+        print_error("Course is misconfigured");
     }
 
     $params = array();
@@ -28,7 +28,7 @@
     require_course_login($course, true, $cm);
 
     if (!$stampcoll = stampcoll_get_stampcoll($cm->instance)) {
-        error("Course module is incorrect");
+        print_error("Course module is incorrect");
     }
 
 /// Get capabilities

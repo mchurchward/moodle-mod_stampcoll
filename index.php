@@ -6,23 +6,30 @@
     $id = required_param('id', PARAM_INT);   // course
 
     if (! $course = $DB->get_record('course', array('id' => $id))) {
-        error('Course ID is incorrect');
+        print_error('Course ID is incorrect');
     }
 
+    $params = array();
+    $params['id'] = $id;
+    $PAGE->set_url('/mod/stampcoll/index.php', $params);
+
     require_course_login($course);
+    $PAGE->set_pagelayout('incourse');
 
     add_to_log($course->id, 'stampcoll', 'view all', 'index.php?id=$course->id', '');
 
     $strstamps = get_string('modulenameplural', 'stampcoll');
 
-    $navigation = build_navigation($strstamps);
-    print_header_simple($strstamps, '',
-                 $navigation, '', '', true, '', navmenu($course));
-
+    $PAGE->navbar->add($strstamps);
+    $PAGE->set_heading(format_string($course->fullname));
+    $PAGE->set_title(get_string('modulename', 'stampcoll').' '.get_string('activities'));
+    echo $OUTPUT->header();
 
     if (! $stampcolls = get_all_instances_in_course('stampcoll', $course)) {
         notice('There are no stamp collections', '../../course/view.php?id='.$course->id);
     }
+
+    $table = new html_table();
 
     if ($course->format == 'weeks') {
         $table->head  = array (get_string('week'), get_string('name'), get_string('numberofstamps', 'stampcoll'));
@@ -39,7 +46,7 @@
 
     foreach ($stampcolls as $stampcoll) {
         if (! $cm = get_coursemodule_from_instance('stampcoll', $stampcoll->id)) {
-            error('Course Module ID was incorrect');
+            print_error('Course Module ID was incorrect');
         }
         $context = get_context_instance(CONTEXT_MODULE, $cm->id);
         include(dirname(__FILE__).'/caps.php');
@@ -103,8 +110,8 @@
             $table->data[] = array ($tt_href, $aa);
         }
     }
-    print_table($table);
+    echo html_writer::table($table);
 
-    print_footer($course);
+    echo $OUTPUT->footer($course);
 
 ?>

@@ -7,11 +7,11 @@
     $page = optional_param('page', 0, PARAM_INT);   // Page of the batch view
 
     if (! $cm = get_coursemodule_from_id('stampcoll', $id)) {
-        error("Course Module ID was incorrect");
+        print_error("Course Module ID was incorrect");
     }
 
     if (! $course = $DB->get_record("course", array("id" => $cm->course))) {
-        error("Course is misconfigured");
+        print_error("Course is misconfigured");
     }
 
     $params = array();
@@ -29,11 +29,11 @@
 
     if (!$cap_givestamps) {
         // Illegal access to the page
-        error("You are not allowed to use this page");
+        print_error("You are not allowed to use this page");
     }
 
     if (!$stampcoll = stampcoll_get_stampcoll($cm->instance)) {
-        error("Course module is incorrect");
+        print_error("Course module is incorrect");
     }
 
     if (!$allstamps = stampcoll_get_stamps($stampcoll->id)) {
@@ -68,7 +68,7 @@
     if (($form = data_submitted()) && $cap_givestamps ) {
         if (isset($form->addstamp) and $form->addstamp == '1') {
             if (!isset($form->sesskey) || !confirm_sesskey($form->sesskey)) {
-                error('Sesskey error');
+                print_error('Sesskey error');
             }
             $newstamp->stampcollid = $stampcoll->id;
             $newstamp->userid = $form->userid;
@@ -82,7 +82,7 @@
             $newstamp->timemodified = time();
 
             if (! $newstamp->id = $DB->insert_record("stampcoll_stamps", $newstamp)) {
-                error("Could not save new stamp");
+                print_error("Could not save new stamp");
             }
             add_to_log($course->id, "stampcoll", "add stamp", "view.php?id=$cm->id", $newstamp->userid, $cm->id);
             redirect("editstamps.php?id=$cm->id&page=$form->page");
@@ -90,11 +90,11 @@
         }
         if (isset($form->updatestamp) and $form->updatestamp == '1') {
             if (!isset($form->sesskey) || !confirm_sesskey($form->sesskey)) {
-                error('Sesskey error');
+                print_error('Sesskey error');
             }
             $updatedstamp = stampcoll_get_stamp($form->stampid);
             if (!($cap_managestamps || $updatedstamp->giver == $USER->id)) {
-                error('You are not allowed to update this stamp');
+                print_error('You are not allowed to update this stamp');
             }
             if (!isset($form->text)) {
                 $form->text = '';
@@ -103,7 +103,7 @@
             $updatedstamp->timemodified = time();
 
             if (! $DB->update_record("stampcoll_stamps", $updatedstamp)) {
-                error("Could not update stamp");
+                print_error("Could not update stamp");
             }
             $updatedstamp = stampcoll_get_stamp($updatedstamp->id);
             add_to_log($course->id, "stampcoll", "update stamp", "view.php?id=$cm->id", $updatedstamp->userid, $cm->id);
@@ -112,16 +112,16 @@
         }
         if (isset($form->deletestamp)) {
             if (! $cap_managestamps) {
-                error('You are not allowed to managestamps');
+                print_error('You are not allowed to managestamps');
             }
             if (!isset($form->sesskey) || !confirm_sesskey($form->sesskey)) {
-                error('Sesskey error');
+                print_error('Sesskey error');
             }
             if (! $stamp = stampcoll_get_stamp($form->deletestamp)) {
-                error("Could not find stamp");
+                print_error("Could not find stamp");
             }
             if (! $DB->delete_records("stampcoll_stamps", array("id" => $form->deletestamp))) {
-                error("Could not delete stamp");
+                print_error("Could not delete stamp");
             }
             add_to_log($course->id, "stampcoll", "delete stamp", "view.php?id=$cm->id", $stamp->userid, $cm->id);
             if (isset($form->page)) {
@@ -137,11 +137,11 @@
 
     if (isset($_GET['d']) && $cap_managestamps) {
         if (!isset($_GET['sesskey']) || !confirm_sesskey($_GET['sesskey'])) {
-            error('Sesskey error');
+            print_error('Sesskey error');
         }
 
        if (! $stamp = stampcoll_get_stamp($_GET['d'])) {
-            error("Invalid stamp ID");
+            print_error("Invalid stamp ID");
         }
 
         echo $OUTPUT->box_start();
@@ -282,11 +282,11 @@
 
         if ($cap_viewotherstamps &&  $showupdateforms && isset($userstamps[$auser->id])) {
             foreach ($userstamps[$auser->id] as $userstamp) {
-                $count = stampcoll_stamp($userstamp, '', true, false, $CFG->pixpath.'/t/preview.gif');
+                $count = stampcoll_stamp($userstamp, '', true, false, $OUTPUT->pix_url('t/preview'));
                 $count .= '&nbsp;';
                 if ($cap_managestamps) {
                     $count .= '<a href="editstamps.php?id='.$cm->id.'&amp;d='.$userstamp->id.'&amp;sesskey='.sesskey().'&amp;page='.$page.'" title="'.get_string('deletestamp', 'stampcoll').'">';
-                    $count .= '<img src="'.$CFG->pixpath.'/t/delete.gif" height="11" width="11" border="0" alt="'.get_string('deletestamp', 'stampcoll').'" />';
+                    $count .= '<img src="'.$OUTPUT->pix_url('t/delete').'" height="11" width="11" border="0" alt="'.get_string('deletestamp', 'stampcoll').'" />';
                     $count .= '</a>&nbsp;&nbsp;';
                 }
 

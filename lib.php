@@ -230,7 +230,7 @@ function stampcoll_get_stamp($stampid) {
  * @return string HTML code displaying the image
  */
 function stampcoll_stamp($stamp, $image='', $tooltip=true, $anonymous=false, $imageurl=null) {
-    global $CFG, $COURSE;
+    global $CFG, $COURSE, $DB;
 
     $image_location = $CFG->dataroot . '/'. $COURSE->id . '/'. $image;
     if (empty($image) || $image == 'default' || !file_exists($image_location)) {
@@ -249,13 +249,13 @@ function stampcoll_stamp($stamp, $image='', $tooltip=true, $anonymous=false, $im
     $alt = get_string('stampimage', 'stampcoll');
     $date = userdate($stamp->timemodified);
     if (!empty($stamp->giver) && $tooltip && !$anonymous) {
-        $author = fullname(get_record('user', 'id', $stamp->giver, '', '', '', '', 'lastname,firstname')). '<br />';
+        $author = fullname($DB->get_record('user', array('id' => $stamp->giver), 'lastname,firstname')). '<br />';
         $author = get_string('givenby', 'stampcoll', $author);
     } else {
         $author = '';
     }
     if ($tooltip) {
-        $recepient = fullname(get_record('user', 'id', $stamp->userid, '', '', '', '', 'lastname,firstname')). '<br />';
+        $recepient = fullname($DB->get_record('user', array('id' => $stamp->userid), 'lastname,firstname')). '<br />';
         $recepient = get_string('givento', 'stampcoll', $recepient);
     } else {
         $recepient = '';

@@ -16,6 +16,25 @@ define('STAMPCOLL_IMAGE_URL', $CFG->wwwroot.'/mod/stampcoll/defaultstamp.gif');
 /// MODULE FUNCTIONS //////////////////////////////////////////////////////
 
 /**
+ * @uses FEATURE_GROUPS
+ * @uses FEATURE_GROUPINGS
+ * @uses FEATURE_GROUPMEMBERSONLY
+ * @uses FEATURE_MOD_INTRO
+ * @uses FEATURE_COMPLETION_TRACKS_VIEWS
+ * @uses FEATURE_GRADE_HAS_GRADE
+ * @uses FEATURE_GRADE_OUTCOMES
+ * @param string $feature FEATURE_xx constant for requested feature
+ * @return mixed True if module supports feature, null if doesn't know
+ */
+function stampcoll_supports($feature) {
+    switch($feature) {
+        case FEATURE_BACKUP_MOODLE2:          return true;
+
+        default: return null;
+    }
+}
+
+/**
  * @todo Documenting this function. Capabilities checking
  */
 function stampcoll_user_outline($course, $user, $mod, $stampcoll) {
@@ -262,9 +281,21 @@ function stampcoll_stamp($stamp, $image='', $tooltip=true, $anonymous=false, $im
     }
     $caption = $author . $recepient . $date;
     $comment = format_string($stamp->text);
-    $tooltip_start = '<a class="stampimagewrapper" href="javascript:void(0);"
-                         onmouseover="return overlib(\'' . s($comment) . '\', CAPTION, \'' . s($caption) . '\' );"
-                         onmouseout="nd();">';
+
+//
+    $tooltip_start = "<script>
+    myTooltip = new YAHOO.widget.Tooltip(\"myTooltip\", {
+    context: \"stampimage\",
+    text: \"". s($comment) . '\', CAPTION, \'' . s($caption) . "\",
+    showDelay: 500
+	});
+	</script>";
+    $tooltip_start .= '<a class="stampimagewrapper" id="stampimage" href="javascript:void(0);" title="'.s($comment) . '\', CAPTION, \'' . s($caption).'">';
+//
+
+//    $tooltip_start = '<a class="stampimagewrapper" href="javascript:void(0);"
+//                         onmouseover="return overlib(\'' . s($comment) . '\', CAPTION, \'' . s($caption) . '\' );"
+//                         onmouseout="nd();">';
     $tooltip_end = '</a>';
     $img = '<img class="stampimage" src="' . $src . '" alt="'. $alt .'" />';
 
